@@ -465,7 +465,7 @@ LJ_FUNCA int lj_err_unwind_win(EXCEPTION_RECORD *rec,
       } else if (!LJ_EXCODE_CHECK(rec->ExceptionCode)) {
 	/* Don't catch access violations etc. */
 	return 1;  /* ExceptionContinueSearch */
-      }
+}
 #if LJ_TARGET_X64
       /* Unwind the stack and call all handlers for all lower C frames
       ** (including ourselves) again with EH_UNWINDING set. Then set
@@ -506,8 +506,8 @@ static void err_raise_ext(int errcode)
 /* Throw error. Find catch frame, unwind stack and continue. */
 LJ_NOINLINE void LJ_FASTCALL lj_err_throw(lua_State *L, int errcode)
 {
-  if (errcode != LUA_ERRRUN){
-    luai_errevent(L, errcode);
+  if (errcode != LUA_ERRRUN) {
+    luai_errevent(L, errcode, 0);
   }
   global_State *g = G(L);
   lj_trace_abort(g);
@@ -594,7 +594,7 @@ static ptrdiff_t finderrfunc(lua_State *L,int *is_protectcall)
       break;
     case FRAME_PCALL:
     case FRAME_PCALLH:
-      if (is_protectcall) *is_protectcall = 1;
+      if(is_protectcall) *is_protectcall = 1;
       if (frame_func(frame_prevd(frame))->c.ffid == FF_xpcall)
 	return savestack(L, frame_prevd(frame)+1);  /* xpcall's errorfunc. */
       return 0;
@@ -611,8 +611,8 @@ LJ_NOINLINE void LJ_FASTCALL lj_err_run(lua_State *L)
 {
     int is_protectcall = 0;
     ptrdiff_t ef = (LJ_HASJIT && tvref(G(L)->jit_base)) ? 0 : finderrfunc(L, &is_protectcall);
-    luai_errevent(L, LUA_ERRRUN | (is_protectcall ? 0 : LUA_ERREVENT_PANIC));
-  if (ef) {
+    luai_errevent(L,LUA_ERRRUN,  (is_protectcall ? 0 : LUA_ERREVENT_PANIC));
+    if (ef) {
     TValue *errfunc = restorestack(L, ef);
     TValue *top = L->top;
     lj_trace_abort(G(L));
@@ -712,22 +712,22 @@ LJ_NOINLINE void lj_err_callermsg(lua_State *L, const char *msg)
 {
   TValue *frame = L->base-1;
   TValue *pframe = NULL;
-  if (frame_islua(frame)) {
-    pframe = frame_prevl(frame);
-  } else if (frame_iscont(frame)) {
-    if (frame_iscont_fficb(frame)) {
-      pframe = frame;
-      frame = NULL;
-    } else {
-      pframe = frame_prevd(frame);
+    if (frame_islua(frame)) {
+      pframe = frame_prevl(frame);
+    } else if (frame_iscont(frame)) {
+      if (frame_iscont_fficb(frame)) {
+	pframe = frame;
+	frame = NULL;
+      } else {
+	pframe = frame_prevd(frame);
 #if LJ_HASFFI
-      /* Remove frame for FFI metamethods. */
-      if (frame_func(frame)->c.ffid >= FF_ffi_meta___index &&
-	  frame_func(frame)->c.ffid <= FF_ffi_meta___tostring) {
-	L->base = pframe+1;
-	L->top = frame;
-	setcframe_pc(cframe_raw(L->cframe), frame_contpc(frame));
-      }
+	/* Remove frame for FFI metamethods. */
+	if (frame_func(frame)->c.ffid >= FF_ffi_meta___index &&
+	    frame_func(frame)->c.ffid <= FF_ffi_meta___tostring) {
+	  L->base = pframe+1;
+	  L->top = frame;
+	  setcframe_pc(cframe_raw(L->cframe), frame_contpc(frame));
+	}
 #endif
     }
   }
