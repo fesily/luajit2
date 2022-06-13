@@ -26,6 +26,8 @@
 #include "lj_strscan.h"
 #include "lj_strfmt.h"
 
+#include "luai_devent.h"
+
 /* -- Common helper functions --------------------------------------------- */
 
 #define lj_checkapi_slot(idx) \
@@ -1223,6 +1225,7 @@ LUA_API void lua_resetthread(lua_State *L, lua_State *th)
 
   th->exdata = L->exdata;
   th->exdata2 = L->exdata2;
+  th->hookmask2 = L->hookmask2;
 }
 
 LUA_API int lua_yield(lua_State *L, int nresults)

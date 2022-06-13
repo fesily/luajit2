@@ -700,6 +700,7 @@ struct lua_State {
   MSize stacksize;	/* True stack size (incl. LJ_STACK_EXTRA). */
   void *exdata;	        /* user extra data pointer. added by OpenResty */
   void *exdata2;	/* the 2nd user extra data pointer. added by OpenResty */
+  uint8_t hookmask2; /* save thread and exception mask*/
 #if LJ_TARGET_ARM
   uint32_t unused1;
   uint32_t unused2;
